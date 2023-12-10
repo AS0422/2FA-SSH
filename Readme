@@ -1,3 +1,9 @@
 A bash script that enable two factor authentication for connections over ssh.
 
 # Configueration 
+chmod +x 2FA
+sudo nano /etc/ssh/sshd_config
+At the bottom of the config file enter:
+ForceCommand /path/to/file username .
+sudo service ssh restart
+
