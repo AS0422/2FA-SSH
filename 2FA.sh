@@ -1,8 +1,20 @@
 #!/bin/bash
+# Installs packages needed for the script
+package_installer() {
+    if ! command -v oathtool &> /dev/null; then
+        echo "oathtool not found. Installing..."
+        sudo apt-get install -y oathtool
+    fi
 
+    if ! command -v qrencode &> /dev/null; then
+        echo "qrencode not found. Installing..."
+        sudo apt-get install -y qrencode 
+        
+    fi
+}
 # Function to generate a secret key (user)
 generate_secret_key() {
-    head -c 20 /dev/urandom | base64 | tr -d '='
+    head -c 20 /dev/urandom | base32 | tr -d '='
 }
 
 # Function to generate and display QR code (authenticator app)
@@ -13,7 +25,7 @@ generate_qr_code() {
 
     local uri="otpauth://totp/$issuer:$user?secret=$key&issuer=$issuer"
 
-    qrencode -t ANSI256 -l L "$uri"
+    qrencode -t ANSI256 -l L "$uri" # Display QR in terminal
 }
 
 # Function to verify the OTP
@@ -24,17 +36,19 @@ verify_otp() {
 
     if [ "$otp_generated" == "$user_input" ]; then
         echo "Access granted"
-        exit 0  # Allow access
+        return 0  # Allow access
     else
         echo "Access denied"
-        exit 1  # Deny access
+        return 1  # Deny access
     fi
 }
 
+# Main
+package_installer
 # Ensure a username is provided
 if [ -z "$1" ]; then
     echo "Usage: $0 <user>"
-    exit 1
+    return 1
 fi
 
 user=$1
@@ -48,3 +62,4 @@ read -p "Enter the OTP from your authenticator app: " user_input
 
 # Verify the OTP
 verify_otp "$key" "$user_input"
+sh # Keeps shell open
